@@ -2,6 +2,7 @@
 #define ACCEL 0x53
 #define GYROS 0x68
 #define MAGNT 0x1E
+
 //REGMAP ACELEROMETRO
 #define ACCXLO 0X32
 #define ACCXHI 0x33
@@ -9,6 +10,7 @@
 #define ACCYHI 0x35
 #define ACCZLO 0x36
 #define ACCZHI 0x37
+
 //REGMAP MAGNETOMETRO
 #define MAGXHI 0x03
 #define MAGXLO 0x04
@@ -16,6 +18,7 @@
 #define MAGYLO 0x06
 #define MAGZHI 0x07
 #define MAGZLO 0x08
+
 //REGMAP GYROS
 #define TEMPHI 0X1B
 #define TEMPLO 0X1C
@@ -34,20 +37,12 @@
 
 
 /*
-  ADXL345 Datasheet: https://goo.gl/uOZc2b
-  Table 16. Register Map Address
-  Hex   Dec Name  Type  Reset_Value   Description
-  0x2D  45 POWER_CTL  R/W   00000000  Power-saving features control.
-  (...)
-  0x32  50 DATAX0  X-Axis Data 0. EIXO X LSB
-  0x33  51 DATAX1  X-Axis Data 1. EIXO X MSB
-  0x34  52 DATAY0  Y-Axis Data 0. EIXO Y LSB
-  0x35  53 DATAY1  Y-Axis Data 1. EIXO Y MSB
-  0x36  54 DATAZ0  Z-Axis Data 0. EIXO Z LSB
-  0x37  55 DATAZ1  Z-Axis Data 1. EIXO Z MSB
+ 
+	Are you proposing to slaughter our tennants?
 
 */
-unsigned long int TF, T0, DT;
+
+unsigned long int TF, T0, DT; // comentar fora, apenas pra debug
 int MAGx;
 int MAGy;
 int MAGz;
@@ -79,7 +74,7 @@ void setup(){
 	(k == 0)? Serial.println("GYROS ARM") : Serial.println("GYROS FAIL"); //diag gyro
 	delay(500);
 
-	Serial.println("ACC X, ACC Y, ACC Z, MAG X, MAG Y, MAG Z, GYR X, GYR Y, GYR Z");
+	Serial.println("\tACC X\tACC Y\tACC Z\tMAG X\tMAG Y\tMAG Z\tGYR X\tGYR Y\tGYR Z\tTEMP\tREQTIME");
 }
 
 void loop(){
@@ -221,26 +216,27 @@ void loop(){
 	TF = micros();	
 	DT = (TF - T0)/4;
 //Serial.println("ACC X, ACC Y, ACC Z, MAG X, MAG Y, MAG Z, GYR X, GYR Y, GYR Z, TEMP");
+	Serial.print("\t");
 	Serial.print(ACCx);
-	Serial.print(",");
+	Serial.print(",\t");
 	Serial.print(ACCy);
-	Serial.print(",");
+	Serial.print(",\t");
 	Serial.print(ACCz);
-	Serial.print(",");
+	Serial.print(",\t");
 	Serial.print(MAGx);
-	Serial.print(",");
+	Serial.print(",\t");
 	Serial.print(MAGy);
-	Serial.print(",");
+	Serial.print(",\t");
 	Serial.print(MAGz);
-	Serial.print(",");
+	Serial.print(",\t");
 	Serial.print(GYRx);
-	Serial.print(",");
+	Serial.print(",\t");
 	Serial.print(GYRy);
-	Serial.print(",");
+	Serial.print(",\t");
 	Serial.print(GYRz);
-	Serial.print(",");
+	Serial.print(",\t");
 	Serial.print(TEMP);
-	Serial.print(",");
+	Serial.print(",\t");
 	Serial.print(DT);
 	Serial.println("");
 	
