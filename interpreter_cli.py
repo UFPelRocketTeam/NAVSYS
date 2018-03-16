@@ -14,19 +14,19 @@
 # ===================================================================
 
 import socket
-from serial import serial
+import serial
 import time
 import sys
 import thread
 import getopt
 
-z1baudrate = 9600
+z1baudrate = 115200
 z1port = '/dev/ttyACM0'
 
 sampling_t = []
 sampling_data = []
 
-# logger
+# logger, escreve pro arquivo on time
 
 def serial_logger():
 	z1serial = serial.Serial(port=z1port, baudrate=z1baudrate)
@@ -36,58 +36,28 @@ def serial_logger():
 	if z1serial.is_open:
 		L = []
 		thread.start_new_thread(input_thread, (L,))
+		f = open('out.csv', 'w')
 		while True:
 			size = z1serial.inWaiting()
 			if size:
-				new_data = str(z1serial.read(size)+" "+str(time.time()))
-				sampling_data.append(new_data)
+				new_data = str(z1serial.read(size))
+				f.write(new_data)
 				print new_data
-				time.sleep(.1)
+
 			else:
-				print ("no data")
+				print ("STDBY")
 			if L: 
 				z1serial.close()
-				logout(sampling_data)
+				f.close()
 				break
 	return;
 
 
-def internet_logger():
-	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	addr_srv = ('42.42.42.42', 80)
 
-	print >>sys.stderr, 'starting up on %s port %s' % addr_srv
-	sock.bind(addr_srv)
-	sock.listen(1)
-	while True:
-		print >>sys.stderr, 'waiting for conn'
-		connection, client_address = sock.accept()
-	try:
-		print >> sys.stderr, ' connection from ', client_address
-		data = connection.recv(1)
-		if data:
-			new_data = str(data)+" "+str(time.time())
-			sampling_data.append(new_data)
-	finally:
-		if L:
-			connection.close()
-			logout(sampling_data)
-	return;
-#abre um thread pra esperar input do usuario
 def input_thread(L):
 	pudim = raw_input()
 	L.append(pudim)
 
-#loga os dados depois de fechar a conexao
-def logout(sampling_data):
-	print("parsing data into file out.csv")
-	f = open('out.csv', 'w')
-	sampling_n = len(sampling_data)
-
-	for j in range(0, sampling_n):
-		f.write(sampling_data[j])
-
-	f.close()
 #essa merda tem que funcionar
 def main(argv):
 	try:
@@ -106,7 +76,7 @@ def main(argv):
 
 #esse pedaco aqui n sei pqq serve 
 if __name__ == "__main__":
-	main(sys.argv[1:])
+	main(sys.argv[1: ])
 # ======================================================
 #
 #

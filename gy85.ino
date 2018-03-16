@@ -74,7 +74,7 @@ void setup(){
 	(k == 0)? Serial.println("GYROS ARM") : Serial.println("GYROS FAIL"); //diag gyro
 	delay(500);
 
-	Serial.println("\tACC X\tACC Y\tACC Z\tMAG X\tMAG Y\tMAG Z\tGYR X\tGYR Y\tGYR Z\tTEMP\tREQTIME");
+	//Serial.println("\tACC X\tACC Y\tACC Z\tMAG X\tMAG Y\tMAG Z\tGYR X\tGYR Y\tGYR Z\tTEMP\tREQTIME");
 }
 
 void loop(){
@@ -216,29 +216,26 @@ void loop(){
 	TF = micros();	
 	DT = (TF - T0)/4;
 //Serial.println("ACC X, ACC Y, ACC Z, MAG X, MAG Y, MAG Z, GYR X, GYR Y, GYR Z, TEMP");
-	Serial.print("\t");
+
 	Serial.print(ACCx);
-	Serial.print(",\t");
+	Serial.print(" ");
 	Serial.print(ACCy);
-	Serial.print(",\t");
+	Serial.print(" ");
 	Serial.print(ACCz);
-	Serial.print(",\t");
+	Serial.print(" ");
 	Serial.print(MAGx);
-	Serial.print(",\t");
+	Serial.print(" ");
 	Serial.print(MAGy);
-	Serial.print(",\t");
+	Serial.print(" ");
 	Serial.print(MAGz);
-	Serial.print(",\t");
+	Serial.print(" ");
 	Serial.print(GYRx);
-	Serial.print(",\t");
+	Serial.print(" ");
 	Serial.print(GYRy);
-	Serial.print(",\t");
+	Serial.print(" ");
 	Serial.print(GYRz);
-	Serial.print(",\t");
-	Serial.print(TEMP);
-	Serial.print(",\t");
-	Serial.print(DT);
-	Serial.println("");
+	Serial.print(" ");
+	Serial.println();
 	
 	
 
