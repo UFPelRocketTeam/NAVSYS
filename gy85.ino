@@ -43,9 +43,9 @@
 */
 
 unsigned long int TF, T0, DT; // comentar fora, apenas pra debug
-int MAGx;
-int MAGy;
-int MAGz;
+int MAGx, MAGxLSB, MAGxMSB;
+int MAGy, MAGyLSB, MAGyMSB;
+int MAGz, MAGzLSB, MAGzMSB;
 
 int GYRx, GYRxLSB, GYRxMSB;
 int GYRy, GYRyLSB, GYRyMSB;
@@ -78,7 +78,7 @@ void setup(){
 }
 
 void loop(){
-	T0 = micros();
+ T0 = micros();
 // HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
 // H                                                           H
 // H        				ACCELEROMETER  					   H
@@ -128,7 +128,7 @@ void loop(){
 
 		ACCz = ((ACCzMSB << 8) + ACCzLSB);
 	}
-
+/*
 // HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
 
 // HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
@@ -202,21 +202,58 @@ void loop(){
 // H                                                           H
 // HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
 
-  Wire.requestFrom(MAGNT, 6);
-  if(6<=Wire.available()){
-    MAGx = Wire.read()<<8; //MSB  x 
-    MAGx |= Wire.read(); //LSB  x
-    MAGy = Wire.read()<<8; //MSB y
-    MAGy |= Wire.read(); //LSB y
-    MAGz = Wire.read()<<8; //MSB  z
-    MAGz |= Wire.read(); //LSB z
-  }
+	Wire.beginTransmission(MAGNT);
+	Wire.write(MAGXLO);
+	Wire.write(MAGXHI);
+	Wire.endTransmission();
+
+	Wire.requestFrom(MAGNT, 2);
+	if (Wire.available() <= 2){
+		MAGxLSB = Wire.read();
+		MAGxMSB = Wire.read();
+
+		MAGx = ((MAGxMSB << 8) + MAGxLSB);
+	}
+
+	// LER MAGNT EIXO Y
+
+	Wire.beginTransmission(MAGNT);
+	Wire.write(MAGYLO);
+	Wire.write(MAGYHI);
+	Wire.endTransmission();
+
+	Wire.requestFrom(MAGNT, 2);
+	if (Wire.available() <= 2){
+		MAGyLSB = Wire.read();
+		MAGyMSB = Wire.read();
+
+		MAGy = ((MAGyMSB << 8) + MAGyLSB);
+	}
+
+
+	// LER MAGNT EIXO Z
+
+	Wire.beginTransmission(MAGNT);
+	Wire.write(MAGZLO);
+	Wire.write(MAGZHI);
+	Wire.endTransmission();
+
+	Wire.requestFrom(MAGNT, 2);
+	if (Wire.available() <= 2){
+		MAGzLSB = Wire.read();
+		MAGzMSB = Wire.read();
+
+		MAGz = ((MAGzMSB << 8) + MAGzLSB);
+	}
+
+	
+
 
 // HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
 	TF = micros();	
 	DT = (TF - T0)/4;
 //Serial.println("ACC X, ACC Y, ACC Z, MAG X, MAG Y, MAG Z, GYR X, GYR Y, GYR Z, TEMP");
-
+*/
 	Serial.print(ACCx);
 	Serial.print(" ");
 	Serial.print(ACCy);
@@ -235,10 +272,9 @@ void loop(){
 	Serial.print(" ");
 	Serial.print(GYRz);
 	Serial.print(" ");
+	Serial.print(DT);
 	Serial.println();
 	
-	
-
 }
 
 // HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
@@ -278,14 +314,14 @@ int ACCEL_SETUP(){
 	return i;
 
 }
-
+/*
 int MAGNT_SETUP(){
 	
 	Wire.beginTransmission(MAGNT); //open communication with HMC5883
 	Wire.write(0x02); //select mode register
 	Wire.write(0x00); //continuous measurement mode
 	Wire.write(0x00); //reg de conf
-	Wire.write(0x74); // 30hz output rate, 8 medidas por amostra
+	Wire.write(0x78); // 75hz output rate, 8 medidas por amostra
 	int i = Wire.endTransmission();
 	switch (i){ // case switch pra debugar
 		case 0: Serial.println("MAGNT OK"); break;
@@ -317,3 +353,4 @@ int GYROS_SETUP(){
 
 	
 }
+*/

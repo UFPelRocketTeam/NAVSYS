@@ -20,7 +20,7 @@ import sys
 import thread
 import getopt
 
-z1baudrate = 115200
+z1baudrate = 9600
 z1port = '/dev/ttyACM0'
 
 sampling_t = []
@@ -45,10 +45,12 @@ def serial_logger():
 				print new_data
 
 			else:
-				print ("STDBY")
+				print ("RECORDING")
+				
 			if L: 
 				z1serial.close()
 				f.close()
+				print ("File saved as out.csv")
 				break
 	return;
 

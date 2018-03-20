@@ -6,3 +6,9 @@ BAKS/
 *.ods
 
 *.ods#
+
+role_preproc/
+
+*.csv
+
+*.zip
