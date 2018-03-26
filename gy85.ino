@@ -49,12 +49,14 @@ void setup(){
 		Wire.write(0x08);  
 
 	Wire.endTransmission();
+	delay(500);
 }
 
 
 void loop(){
+	unsigned long int t0 = micros();
 // ------------------ LER MAGNETOMETRO -----------------------------
-
+	
 	Wire.beginTransmission(MAGNT);
 	Wire.write(0x03); //start with register 3.
 	Wire.endTransmission();
@@ -111,6 +113,9 @@ void loop(){
 		ACCz = Wire.read();
 		ACCz |= Wire.read()<<8;
 	}
+unsigned long int tf = micros();
+
+	unsigned long int dt = (tf - t0);
 
 
 
@@ -119,16 +124,18 @@ void loop(){
 
 
 	Serial.print(MAGx);
-	Serial.print(" ");
+	Serial.print(",");
 	Serial.print(MAGy);
-	Serial.print(" ");
+	Serial.print(",");
 	Serial.print(MAGz);
-	Serial.print(" ");
+	Serial.print(",");
 	Serial.print(ACCx);
-	Serial.print(" ");
+	Serial.print(",");
 	Serial.print(ACCy);
-	Serial.print(" ");
+	Serial.print(",");
 	Serial.print(ACCz);
+	Serial.print(",");
+	Serial.print(dt);
 	Serial.println(" ");
 
 }
