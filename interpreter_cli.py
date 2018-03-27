@@ -36,7 +36,7 @@ def serial_logger():
 	if z1serial.is_open:
 		L = []
 		thread.start_new_thread(input_thread, (L,))
-		f = open('../data/out.csv', 'w')
+		f = open('./data/out.csv', 'w')
 		while True:
 			size = z1serial.inWaiting()
 			if size:
