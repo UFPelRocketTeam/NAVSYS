@@ -1,311 +1,272 @@
-// NAVSYS 1.2 
-// enjOy[dream]	ver 1.2 apr 2018
+//altimetrotwks1.3
 
-#define GYR_R 0x1B
-
+//ENDEREÇOS I2C
 #define ACCEL 0x53
 #define GYROS 0x68
 #define MAGNT 0x1E
 
+//REGMAP ACELEROMETRO
+#define ACCXLO 0X32
+#define ACCXHI 0x33
+#define ACCYLO 0x34
+#define ACCYHI 0x35
+#define ACCZLO 0x36
+#define ACCZHI 0x37
+
+#define GYROS 0x68
+#define GYR_R 0x1B
+
+#include "Arduino.h"
+#include "SFE_BMP180.h"
+//#include "MPU6050.h"
+#include "Wire.h"
+#include "I2Cdev.h"
+#include "SD.h"
 
 #define SDFILE_PIN_CS  10
 #define IGNITOR 7
 #define LED 4
-#define TIME 300000
+#define TIME 10000
 
-#include "Arduino.h"
-#include "SFE_BMP180.h"
-#include "Wire.h"
-#include "I2Cdev.h"
-#include "SD.h"
-#include <avr/interrupt.h>
-/*
- 
-	Are you proposing to slaughter our tennants?
-	fafafa
-*/
-
-volatile float data[14];
-volatile bool G_INT, A_INT, M_INT;
-
+double altura;
+double alturamax;
+double pressao;
+double temperatura;
 int i=0;
 int flag=0;
+
+int MAGx,GYRx,ACCx;
+int MAGy,GYRy,ACCy;
+int MAGz,GYRz,ACCz;
 
 File sdFile;
 SFE_BMP180 bmp180;
 char filename[7]="00.TXT";  //nome do arquivo inicial
 
-/*
-	indices do buffer
+void setup()
+{
+  Serial.begin(9600);
+  while (!Serial) ;
+    Serial.println("Start");
+    Serial.println("1");
+    bmp180.begin();
+    Serial.println("2");
+    Wire.begin();
+    Serial.println("3");
+    pinMode(SDFILE_PIN_CS, OUTPUT);
+    Serial.println("4");
+    pinMode(IGNITOR, OUTPUT);
+    Serial.println("5");
+      pinMode(LED, OUTPUT);
+    Serial.println("Foi!!! =D");
+  if (!SD.begin())
+  {
+    Serial.println(F("KEBAB REMOVED"));
+    while(1);
+  }
+  Serial.println(F("É HORA DO SHOW."));
+  while(SD.exists(filename))
+  {
+    if(i<10)
+    sprintf(filename,"0%d.TXT",i);
+    else
+    sprintf(filename,"%2d.TXT",i);
+    i++;
+  }
+  sdFile = SD.open(filename, FILE_WRITE);
+  digitalWrite(LED,HIGH);
+    altura = bmp180.altitude();
+    alturamax=altura;
+    pressao = bmp180.getPressure();
+    temperatura = bmp180.getTemperatureC();
 
-	data[0] - tempo
-	data[1] - temperatura
-	data[2] - altura
-	data[3] - altura max
-	data[4] - pressao
-	data[5], [6], [7] - Acelerometro (X, Y, Z)
-	data[8], [9], [10] - Giroscópio	(X, Y, Z)
-	data[11], [12], [13] - Magnetometro (X, Y, Z)
-*/
+  Wire.beginTransmission(ACCEL);
 
-void setup (){
+    Wire.write(0x2D); // modo medição
+    Wire.write(8);
+  Wire.endTransmission(); 
     
-	Wire.begin();
-	Serial.begin(9600);
-	// HARDWARE IRR
-
-	//input PB0 PB1 PB2, PCINT0, PCINT1, PCINT2
-	EICRA = (1 << ISC00);
-	PCICR = (1 << PCIE0); // PCINT 0 
-	PCMSK0 = (1 << PCINT0)|(1 << PCINT1)|(1 << PCINT2); // INT PB0 PB1 PB2
-	 __asm__("nop\n\t"); 
-
-	bmp180.begin();
-	pinMode(SDFILE_PIN_CS, OUTPUT);
-	pinMode(IGNITOR, OUTPUT);
-	pinMode(LED, OUTPUT);
-
-	if (!SD.begin())
-	{
-	    //Serial.println(F("não funciona ou não está presente"));
-	    while(1);
-	}
-	 //Serial.println(F("Cartão de memória inicializado."));
-	while(SD.exists(filename)){
-
-	  if(i<10)
-	    sprintf(filename,"0%d.TXT",i);
-	  
-	  else
-	  sprintf(filename,"%2d.TXT",i);
-	  i++;
-
-	}
-    
-    sdFile = SD.open(filename, FILE_WRITE); // seta altitude inicial
-    digitalWrite(LED,HIGH);
-	data[2] = bmp180.altitude();
-	data[3] =  data[2];
-	data[4] = bmp180.getPressure();
-	data[1] = bmp180.getTemperatureC();
+    Wire.beginTransmission(ACCEL);
+    Wire.write(0x21); // desativa modo double tap
+    Wire.write(0);
+    Wire.endTransmission();
+    Wire.beginTransmission(ACCEL);
+    Wire.write(0x22); // idem
+    Wire.write(0);
+    Wire.endTransmission();
+    Wire.beginTransmission(ACCEL);
+    Wire.write(0x23); // idem
+    Wire.write(0);
+    Wire.endTransmission();
+    Wire.beginTransmission(ACCEL);
+    Wire.write(0x31); // resolução completa, escala +/- 16g
+    Wire.write(0x0B);  // 0.004 g por LSB
+    Wire.endTransmission();
 
 
-	gyros_setup();
-	accel_setup();
-
+  Wire.begin();
+  
+  Wire.beginTransmission(MAGNT); //start talking
+  
+  Wire.write(0x02); // Set the Register
+  Wire.write(0x00); // Tell the HMC5883 to Continuously Measure
+  
+  int j = Wire.endTransmission();
+    switch (j){
+    case 0: Serial.println("MAGNT SETUP OK"); break;
+    case 1: Serial.println("MAGNT SETUP TRANSMIT BUFF OVF"); break;
+    case 2: Serial.println("MAGNT SETUP ADDRESS NACK"); break;
+    case 3: Serial.println("MAGNT SETUP DATA NACK"); break;
+    case 4: Serial.println("MAGNT SETUP BELGIUM"); break;
 }
 
-
-void gyros_setup(){
-
-	Wire.begin();
-	Wire.beginTransmission(GYROS);
-	
-		Wire.write(0x17); // interr config
-		Wire.write(0x01); // raw rdy enable
-
-	int b = Wire.endTransmission();
-	switch (b){
-		case 0: Serial.println("GYROS INT SETUP OK"); break;
-		case 1: Serial.println("GYROS INT SETUP TRANSMIT BUFF OVF"); break;
-		case 2: Serial.println("GYROS INT SETUP ADDRESS NACK"); break;
-		case 3: Serial.println("GYROS INT SETUP DATA NACK"); break;
-		case 4: Serial.println("GYROS INT SETUP BELGIUM"); break;
-	}
+  Wire.beginTransmission(GYROS);
+    Wire.write(0x16);
+    Wire.write(0x1C);
+  int i = Wire.endTransmission();
+  switch (i){
+    case 0: Serial.println("GYROS SETUP OK"); break;
+    case 1: Serial.println("GYROS SETUP TRANSMIT BUFF OVF"); break;
+    case 2: Serial.println("GYROS SETUP ADDRESS NACK"); break;
+    case 3: Serial.println("GYROS SETUP DATA NACK"); break;
+    case 4: Serial.println("GYROS SETUP BELGIUM"); break;
+  }
 
 }
-
-void accel_setup(){
-	
-	Wire.beginTransmission(ACCEL);
-
-		Wire.write(0x2C); // modo medição
-		Wire.write(0x0c);
-
-	Wire.endTransmission();
- 
-	Wire.beginTransmission(ACCEL);
-
-		Wire.write(0x2D); // modo medição
-		Wire.write(0x08);
-
-	Wire.endTransmission();
-
-	Wire.beginTransmission(ACCEL);
-	
-		Wire.write(0x31); // resolução completa, escala +/- 2g
-		Wire.write(0x0F);  
-
-	Wire.endTransmission();
-
-	Wire.beginTransmission(ACCEL);
-
-		Wire.write(0x2e); //enable irr
-		Wire.write(0x80); //drdy
-
-	Wire.endTransmission();
-
-	Wire.beginTransmission(ACCEL);
-
-		Wire.write(0x2F); //map irr
-		Wire.write(0x80); //irr drdy1
-
-	Wire.endTransmission();
-
-	Wire.beginTransmission(ACCEL);
-
-		Wire.write(0x30);//irr source
-		Wire.write(0x80); //irr drdy
-
-	Wire.endTransmission();
-
-	
-
-}
-
 void loop(){
-
-	bool buff_rdy = false;
-	bool gy_rdy = false;
-	bool bmp_rdy = false;
-
-	if (G_INT){gyro_read();}
-	if (A_INT){acc_read();}
-	if (M_INT){mag_read();}
-
-	bmp_rdy = bmp_read();
-
-	if(data[2]<(data[3]-10.0f) && !flag)
-		{
-		   	digitalWrite(IGNITOR,HIGH);//abre o paraquedas
-		   	flag=1;
+   altura = bmp180.altitude();
+    pressao = bmp180.getPressure();
+    temperatura = bmp180.getTemperatureC();
+   
+        if(altura<(alturamax-10.0f) && !flag)
+        {
+            digitalWrite(IGNITOR,HIGH);//abre o paraquedas
+            flag=1;
         sdFile.print(millis());
         sdFile.print(", ");
         sdFile.println("abriu");
-	}
+        }
 
-	if (bmp_rdy & gy_rdy){
-		file_out();
-	}
-}
+ 	if(altura > alturamax){
+      alturamax = altura;
+    }
+// ------------------ LER MAGNETOMETRO -----------------------------
+  
+  Wire.beginTransmission(MAGNT);
+  Wire.write(0x03); //start with register 3.
+  Wire.endTransmission();
+  
+  Wire.requestFrom(MAGNT, 6);
 
-bool gyro_read(){
-	cli();
+  if(6==Wire.available()){
 
-	G_INT = false;
+    MAGx = Wire.read()<<8; //MSB  x 
+    MAGx |= Wire.read(); //LSB  x
+    MAGy = Wire.read()<<8; //MSB  z
+    MAGy |= Wire.read(); //LSB z
+    MAGz = Wire.read()<<8; //MSB y
+    MAGz |= Wire.read(); //LSB y
+  }
+//--------------------------------------------------
 
-	Wire.beginTransmission(GYROS);
-	Wire.write(GYR_R); //start with register 3.
-	Wire.endTransmission();
-	
-	Wire.requestFrom(GYROS, 8);
+// ------------------ LER GYROS -----------------------------
 
-	if(Wire.available() == 8){
+  Wire.beginTransmission(GYROS);
+  Wire.write(GYR_R); //start with register 3.
+  Wire.endTransmission();
+  
+  Wire.requestFrom(GYROS, 8);
 
-		int temp = Wire.read()<<8; //MSB t 
-		temp |= Wire.read(); //LSB  t
-		data[8] = Wire.read()<<8; //MSB  x
-		data[8] = data[8] + Wire.read(); //LSB x
-		data[9] = Wire.read()<<8; //MSB y
-		data[9] = data[9]+ Wire.read(); //LSB y
-		data[10] = Wire.read()<<8; //MSB z
-		data[10] = data[10] + Wire.read(); //LSB z
-	}
+  if(Wire.available() == 8){
 
-	sei();
-	return true;
+    int temp = Wire.read()<<8; //MSB  x 
+    temp |= Wire.read(); //LSB  x
+    GYRx = Wire.read()<<8; //MSB  z
+    GYRx |= Wire.read(); //LSB z
+    GYRy = Wire.read()<<8; //MSB y
+    GYRy |= Wire.read(); //LSB y
+    GYRz = Wire.read()<<8; //MSB y
+    GYRz |= Wire.read(); //LSB y
 
-}
+  }
 
-bool mag_read(){ // leitura atomizada LE
-	cli();
-	M_INT = false;
-	Wire.beginTransmission(MAGNT);
-	Wire.write(0x03); //start with register 3.
-	Wire.endTransmission();
-	
-	Wire.requestFrom(MAGNT, 6);
+  
+//--------------------------------------------------
 
-	if(6<=Wire.available()){
-
-		data[11] = Wire.read()<<8; //MSB  x 
-		data[11] = data[11] + Wire.read(); //LSB  x
-		data[12] = Wire.read()<<8; //MSB  y
-		data[12] = data[12] + Wire.read(); //LSB y
-		data[13] = Wire.read()<<8; //MSB z
-		data[13] = data[13] + Wire.read(); //LSB z
-	}
-	sei();
-	return true;
-}
-
-bool acc_read(){
-	
-	cli();
-	A_INT = false;
-	Wire.beginTransmission(ACCEL);
-	Wire.write(0x32); //start with register 3.
-	Wire.endTransmission();
-	
-	Wire.requestFrom(ACCEL, 6);
-
-	if(6<=Wire.available()){
-
-		data[5] = Wire.read(); 			//LSB  x 
-		data[5] = data[5] + (Wire.read()<<8); 		//MSB  x
-		data[6] = Wire.read(); 			//LSB  y
-		data[6] = data[6] + (Wire.read()<<8); 		//MSB y
-		data[7] = Wire.read();			//LSB z
-		data[7] = data[7] + (Wire.read()<<8); 		//MSB z
-	}
-	sei();
-	return true;
+// ------------------ LER ACELEROMETRO -----------------------------
 
 
-}
+  Wire.beginTransmission(ACCEL);
+  Wire.write(ACCXLO);
+  Wire.write(ACCXHI);
+  Wire.endTransmission();
+  
+  Wire.requestFrom(ACCEL, 2);
+  if (Wire.available() <= 2){
+    ACCx = Wire.read() ;
+    ACCx |= Wire.read()<< 8;
+  }
+  
+  // LER ACCEL EIXO Y
+  
+  Wire.beginTransmission(ACCEL);
+  Wire.write(ACCYLO);
+  Wire.write(ACCYHI);
+  Wire.endTransmission();
+  
+  Wire.requestFrom(ACCEL, 2);
+  if (Wire.available() <= 2){
+    ACCy = Wire.read();
+    ACCy |= Wire.read() << 8;
+  }
+  
+  
+  // LER ACCEL EIXO Z
 
-void file_out(){
-	cli();
-	sdFile.print(millis());
-	sdFile.print(", ");
-	
-	for (int i = 0; i < 14; i++){
-		sdFile.print(data[i]);
-		sdFile.print(",");
-	}
+  Wire.beginTransmission(ACCEL);
+  Wire.write(ACCZLO);
+  Wire.write(ACCZHI);
+  Wire.endTransmission();
+  
+  Wire.requestFrom(ACCEL, 2);
+  if (Wire.available() <= 2){
+    ACCz = Wire.read();
+    ACCz |= Wire.read()<<8;
+  }
+  
+//--------------------------------------------------
 
-	sdFile.println();
-	sdFile.flush();
-	sei();
-
-}
-
-bool bmp_read(){
-	cli();
-	data[2] = bmp180.altitude();
-    data[4] = bmp180.getPressure();
-    data[1] = bmp180.getTemperatureC();
-    
-    if(data[2]>data[3]){
-	  	data[3]=data[2];
-	}
-
-
-	if(data[2]<(data[3]-10.0f) && !flag){
-	   	digitalWrite(IGNITOR,HIGH);//abre o paraquedas
-	   	flag=1;
-       sdFile.print(millis());
-       sdFile.print(", ");
-       sdFile.println("abriu");
-	}
-
-	sei();
-	return true;
-}
-
-ISR(PCINT0_vect){
-	PINB0? G_INT=true:G_INT=false;
-	PINB1? M_INT=true:M_INT=false;
-	PINB2? A_INT=true:A_INT=false;
-
+  sdFile.print(millis());
+  sdFile.print(altura);
+  sdFile.print(", ");
+  sdFile.print(pressao);
+  sdFile.print(", ");
+  sdFile.print(temperatura);
+  sdFile.print(",");
+  sdFile.print(ACCx);
+  sdFile.print(",");
+  sdFile.print(ACCy);
+  sdFile.print(",");
+  sdFile.print(ACCz);
+  sdFile.print(",");
+  sdFile.print(GYRx);
+  sdFile.print(",");
+  sdFile.print(GYRy);
+  sdFile.print(",");
+  sdFile.print(GYRz);
+  sdFile.print(",");
+  sdFile.print(MAGx);
+  sdFile.print(",");
+  sdFile.print(MAGy);
+  sdFile.print(",");
+  sdFile.print(MAGz);
+  sdFile.println();
+  sdFile.flush();
+  /*
+      if(millis()>TIME)
+    {
+       sdFile.close();
+       digitalWrite(LED,LOW);
+    }
+    */
 }
