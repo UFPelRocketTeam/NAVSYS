@@ -237,6 +237,7 @@ void loop(){
 //--------------------------------------------------
 
   sdFile.print(millis());
+  sdFile.print(", ");
   sdFile.print(altura);
   sdFile.print(", ");
   sdFile.print(pressao);
