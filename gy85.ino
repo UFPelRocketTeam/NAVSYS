@@ -1,5 +1,5 @@
 //altimetrotwks1.3
-
+//alteraçao
 //ENDEREÇOS I2C
 #define ACCEL 0x53
 #define GYROS 0x68
